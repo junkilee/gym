@@ -1,4 +1,3 @@
-import gym
 from collections import OrderedDict
 from .space import Space
 
@@ -41,9 +40,11 @@ class Dict(Space):
         if isinstance(spaces, list):
             spaces = OrderedDict(spaces)
         self.spaces = spaces
+        for space in spaces.values():
+            assert isinstance(space, Space), 'Values of the dict should be instances of gym.Space'
         super(Dict, self).__init__(None, None) # None for shape and dtype, since it'll require special handling
 
-    def seed(self, seed):
+    def seed(self, seed=None):
         [space.seed(seed) for space in self.spaces.values()]
 
     def sample(self):
@@ -59,8 +60,11 @@ class Dict(Space):
                 return False
         return True
 
+    def __getitem__(self, key):
+        return self.spaces[key]
+
     def __repr__(self):
-        return "Dict(" + ", ". join([k + ":" + str(s) for k, s in self.spaces.items()]) + ")"
+        return "Dict(" + ", ". join([str(k) + ":" + str(s) for k, s in self.spaces.items()]) + ")"
 
     def to_jsonable(self, sample_n):
         # serialize as dict-repr of vectors
@@ -80,4 +84,4 @@ class Dict(Space):
         return ret
 
     def __eq__(self, other):
-        return self.spaces == other.spaces
+        return isinstance(other, Dict) and self.spaces == other.spaces
